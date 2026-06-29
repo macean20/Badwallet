@@ -1,55 +1,60 @@
-# BadWallet Ecosystem 🚀
+# 🚀 Projet BadWallet - Mon Dashboard Fintech
 
-Ce dépôt contient le code source du projet **BadWallet**, développé dans le cadre de l'examen de Design Pattern et d'Architecture Logicielle.
+Salut ! Bienvenue sur le dépôt de mon projet **BadWallet**. 
+C'est le projet final que j'ai réalisé pour valider mon module de Design Patterns et d'Architecture Logicielle. L'idée était de ne pas juste faire un petit TP, mais de coder une "vraie" mini-application Fintech de A à Z (avec des microservices en Java et un front en Angular).
 
-## 🏗️ Architecture du Projet
-Le système repose sur une architecture orientée microservices comprenant deux applications Spring Boot distinctes :
+## 🎯 C'est quoi l'idée ?
+L'application permet de gérer des portefeuilles électroniques (comme Wave ou Orange Money). Il y a deux côtés :
+- **Pour l'Agent (ou Admin)** : Il peut créer de nouveaux comptes clients et faire des dépôts ou des retraits pour eux.
+- **Pour le Client** : Il se connecte pour voir son solde, envoyer de l'argent à d'autres personnes, ou même payer ses factures (comme la Senelec ou l'école ISM).
 
-1. **`badwallet-api` (Port 8080)** : Le cœur du système gérant les portefeuilles (Wallets), les transactions (dépôts, retraits, transferts) et agissant comme proxy pour les paiements externes.
-2. **`payment-service` (Port 8081)** : Le microservice externe simulant un facturier (SENELEC, ISM, WOYAFAL). Il gère et expose les factures impayées.
+## 🏗️ Comment c'est construit ?
+J'ai découpé le projet en 3 morceaux :
 
-## 🛠️ Technologies Utilisées
-- **Java 17**
-- **Spring Boot 3** (Web, Data JPA, Validation)
-- **H2 Database** (Base de données en mémoire pour faciliter les tests)
-- **Lombok** (Réduction du code boilerplate)
-- **Maven** (Gestion des dépendances)
+1. **`badwallet-api` (Port 8080)** : 
+   C'est le cerveau du projet. Il gère l'argent, les transferts et calcule les frais (je prends 1% sur les retraits au passage 😅). C'est aussi lui qui fait le pont avec le système des factures.
+   
+2. **`payment-service` (Port 8081)** : 
+   C'est un faux système externe que j'ai créé pour simuler la Senelec ou Woyofal. Il génère de fausses factures pour qu'on puisse les payer depuis l'application principale.
 
-## 📐 Design Patterns Appliqués
-L'application respecte les principes **SOLID** et intègre plusieurs Design Patterns fondamentaux :
-- **Strategy Pattern** : Utilisé dans `badwallet-api` pour gérer différents types de paiements (ex: `BillPaymentStrategy`, `MerchantPaymentStrategy`) via l'interface `PaymentStrategy`.
-- **Factory Pattern** : Implémenté par `PaymentStrategyFactory` pour instancier dynamiquement la bonne stratégie de paiement en fonction du fournisseur (ISM, SENELEC, etc.).
-- **Proxy Pattern** : L'API `badwallet-api` agit comme un proxy (via `ExternalFactureController` et `RestTemplate`) pour transférer les requêtes de consultation de factures vers le `payment-service`.
-- **MVC (Model-View-Controller)** : Séparation stricte des responsabilités (Controllers sans logique métier, Services, Repositories).
-- **DTO Pattern** : Isolement complet entre les entités de la base de données et les données exposées sur l'API (`WalletResponse`, `TransactionResponse`, etc.).
+3. **Le Frontend Angular (Port 4200)** : 
+   L'interface visuelle. J'ai utilisé Angular 17 et TailwindCSS pour que ça soit propre et moderne.
 
-## 🚀 Comment lancer le projet ?
+## 🛠️ La stack technique
+- **Backend** : Java 17, Spring Boot 3, PostgreSQL.
+- **Frontend** : Angular 17, RxJS, TailwindCSS.
 
-### 1. Démarrer le Payment Service
-Ouvrez un terminal dans le dossier `payment-service` et exécutez :
+## 🚀 Lancer le projet sur votre machine
+
+C'est assez simple, il faut juste ouvrir 3 terminaux.
+
+**Étape 1 : Le service des factures**
 ```bash
 cd payment-service
-mvn spring-boot:run
+mvn clean spring-boot:run
 ```
-*(Le service démarrera sur le port 8081 et injectera automatiquement des fausses factures pour les tests).*
+*(Il va tourner sur le port 8081)*
 
-### 2. Démarrer le BadWallet API
-Ouvrez un second terminal dans le dossier `badwallet-api` et exécutez :
+**Étape 2 : L'API principale**
+Ouvrez un autre terminal :
 ```bash
 cd badwallet-api
-mvn spring-boot:run
+mvn clean spring-boot:run
 ```
-*(Le service démarrera sur le port 8080).*
+*(Elle tourne sur le port 8080)*
 
-## 🧪 Tests & Endpoints
-À la racine du projet, vous trouverez le fichier **`badwallet-api.http`**. 
-Il contient tous les jeux d'essais et les appels HTTP prêts à être exécutés via l'extension **REST Client** de VS Code.
+**Étape 3 : L'interface visuelle**
+Dans un dernier terminal :
+```bash
+cd badwallet-web
+npm install
+npm start
+```
+*(Allez ensuite sur http://localhost:4200 dans votre navigateur)*
 
-- **Partie 1** : Gestion des wallets, transactions (frais de 1% max 5000 sur les retraits), et paiements.
-- **Partie 2** : Consultation des factures impayées proxyées vers le port 8081.
+## 🔑 Pour tester
+J'ai préparé des fausses données dans la base de données pour aller plus vite :
+- Si vous voulez tester le paiement de factures, connectez-vous avec ce client : **`+221770000003`**
+- Si vous voulez voir l'interface de l'agent de guichet, utilisez : **`+221770000000`**
 
-## 🌿 Stratégie Git (Feature Branching)
-Le développement a suivi un processus d'intégration continue strict :
-- `main` : Branche de production.
-- `develop` : Branche d'intégration.
-- `feature/*` : Une branche éphémère créée pour chaque endpoint/fonctionnalité, mergée ensuite dans `develop`.
+Merci d'avoir jeté un œil à mon code !
