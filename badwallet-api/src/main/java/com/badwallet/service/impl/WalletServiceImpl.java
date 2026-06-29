@@ -1,7 +1,9 @@
 package com.badwallet.service.impl;
 
+import com.badwallet.dto.request.WalletCreationRequest;
 import com.badwallet.dto.response.WalletResponse;
 import com.badwallet.entity.Wallet;
+import com.badwallet.exception.WalletAlreadyExistsException;
 import com.badwallet.mapper.WalletMapper;
 import com.badwallet.repository.WalletRepository;
 import com.badwallet.service.WalletService;
@@ -37,5 +39,21 @@ public class WalletServiceImpl implements WalletService {
                 })
                 .map(walletMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public WalletResponse createWallet(WalletCreationRequest request) {
+        if (walletRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new WalletAlreadyExistsException("Un wallet avec ce numéro de téléphone existe déjà.");
+        }
+
+        Wallet wallet = Wallet.builder()
+                .phoneNumber(request.getPhoneNumber())
+                .balance(request.getInitialBalance())
+                .build();
+
+        Wallet savedWallet = walletRepository.save(wallet);
+        return walletMapper.toResponse(savedWallet);
     }
 }
