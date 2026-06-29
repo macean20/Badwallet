@@ -73,4 +73,9 @@ public class WalletController {
     public ResponseEntity<TransactionResponse> transfer(@Valid @RequestBody TransferRequest request) {
         return new ResponseEntity<>(transactionService.transfer(request), HttpStatus.CREATED);
     }
+
+    @GetMapping("/{phone}/transactions")
+    public ResponseEntity<List<TransactionResponse>> getTransactionHistory(@PathVariable String phone) {
+        return ResponseEntity.ok(walletService.getTransactionHistory(phone));
+    }
 }

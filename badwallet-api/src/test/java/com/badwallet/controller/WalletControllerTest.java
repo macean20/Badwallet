@@ -223,4 +223,50 @@ class WalletControllerTest {
                         .content("{\"senderPhone\":\"+221770000001\",\"recipientPhone\":\"+221770000001\",\"amount\":100.00}"))
                 .andExpect(status().isBadRequest());
     }
+
+    // ─── Tests Historique ────────────────────────────────────────────────────
+
+    @Test
+    void shouldReturnEmptyHistoryForNewWallet() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/wallets/+221770000001/transactions")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void shouldReturnHistoryAfterTransactions() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Effectuer un retrait sur +221770000003 (solde = 20000)
+        mockMvc.perform(post("/api/wallets/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phoneNumber\":\"+221770000003\",\"amount\":500.00}"))
+                .andExpect(status().isCreated());
+
+        // Effectuer un transfert depuis +221770000003 vers +221770000001
+        mockMvc.perform(post("/api/wallets/transfer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"senderPhone\":\"+221770000003\",\"recipientPhone\":\"+221770000001\",\"amount\":1000.00}"))
+                .andExpect(status().isCreated());
+
+        // L'historique doit contenir 2 transactions (du plus récent au plus ancien)
+        mockMvc.perform(get("/api/wallets/+221770000003/transactions")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].type").value("TRANSFER"))
+                .andExpect(jsonPath("$[1].type").value("WITHDRAWAL"));
+    }
+
+    @Test
+    void shouldReturn404OnHistoryForUnknownWallet() throws Exception {
+        mockMvc.perform(get("/api/wallets/+221700000000/transactions")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+    }
 }

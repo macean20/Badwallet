@@ -2,11 +2,14 @@ package com.badwallet.service.impl;
 
 import com.badwallet.dto.request.WalletCreationRequest;
 import com.badwallet.dto.response.BalanceResponse;
+import com.badwallet.dto.response.TransactionResponse;
 import com.badwallet.dto.response.WalletResponse;
 import com.badwallet.entity.Wallet;
 import com.badwallet.exception.WalletAlreadyExistsException;
 import com.badwallet.exception.WalletNotFoundException;
+import com.badwallet.mapper.TransactionMapper;
 import com.badwallet.mapper.WalletMapper;
+import com.badwallet.repository.TransactionRepository;
 import com.badwallet.repository.WalletRepository;
 import com.badwallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +26,9 @@ import java.util.stream.Collectors;
 public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
     private final WalletMapper walletMapper;
+    private final TransactionMapper transactionMapper;
 
     @Override
     @Transactional
@@ -86,5 +91,20 @@ public class WalletServiceImpl implements WalletService {
                 .phoneNumber(wallet.getPhoneNumber())
                 .balance(wallet.getBalance())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> getTransactionHistory(String phone) {
+        // Vérification de l'existence du wallet avant de chercher ses transactions
+        if (!walletRepository.existsByPhoneNumber(phone)) {
+            throw new WalletNotFoundException(
+                    "Aucun wallet trouvé pour le numéro : " + phone);
+        }
+        return transactionRepository
+                .findByWalletPhoneNumberOrderByCreatedAtDesc(phone)
+                .stream()
+                .map(transactionMapper::toResponse)
+                .collect(Collectors.toList());
     }
 }
