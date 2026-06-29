@@ -33,7 +33,7 @@ public class PaymentDataSeeder {
                                 .reference("FAC-ISM-3-1")
                                 .amount(new BigDecimal("50000.00"))
                                 .serviceName("ISM")
-                                .clientCode("WLT-0000003")
+                                .clientCode("+221770000003")
                                 .dueDate(currentMonthDate)
                                 .status(FactureStatus.IMPAYEE)
                                 .build(),
@@ -41,7 +41,7 @@ public class PaymentDataSeeder {
                                 .reference("FAC-ISM-3-3")
                                 .amount(new BigDecimal("25000.00"))
                                 .serviceName("ISM")
-                                .clientCode("WLT-0000003")
+                                .clientCode("+221770000003")
                                 .dueDate(currentMonthDate)
                                 .status(FactureStatus.IMPAYEE)
                                 .build(),
@@ -49,7 +49,7 @@ public class PaymentDataSeeder {
                                 .reference("FAC-WOY-3-1")
                                 .amount(new BigDecimal("15000.00"))
                                 .serviceName("WOYAFAL")
-                                .clientCode("WLT-0000003")
+                                .clientCode("+221770000003")
                                 .dueDate(currentMonthDate)
                                 .status(FactureStatus.IMPAYEE)
                                 .build(),
@@ -57,14 +57,14 @@ public class PaymentDataSeeder {
                                 .reference("FAC-SEN-3-1")
                                 .amount(new BigDecimal("10000.00"))
                                 .serviceName("SENELEC")
-                                .clientCode("WLT-0000003")
+                                .clientCode("+221770000003")
                                 .dueDate(LocalDate.of(2026, 6, 15)) // Unpaid facture during the requested period (May to July)
                                 .status(FactureStatus.IMPAYEE)
                                 .build()
                 );
 
                 factureRepository.saveAll(factures);
-                log.info("Seeded 4 factures for client WLT-0000003.");
+                log.info("Seeded 4 factures for client +221770000003.");
             }
         };
     }

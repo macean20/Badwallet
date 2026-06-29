@@ -55,7 +55,7 @@ public class MerchantPaymentStrategy implements PaymentStrategy {
                 .type(TransactionType.PAYMENT)
                 .amount(request.getAmount())
                 .wallet(wallet)
-                .destinationPhone(request.getDescription())
+                .destinationPhone(request.getServiceName())
                 .build();
         transactionRepository.save(transaction);
 
@@ -64,7 +64,7 @@ public class MerchantPaymentStrategy implements PaymentStrategy {
                 .phoneNumber(request.getPhoneNumber())
                 .amount(request.getAmount())
                 .paymentType(getType())
-                .description(request.getDescription())
+                .description(request.getServiceName())
                 .paidAt(LocalDateTime.now())
                 .build();
     }
