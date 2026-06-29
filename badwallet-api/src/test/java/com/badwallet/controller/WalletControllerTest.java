@@ -7,8 +7,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.client.ExpectedCount;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.client.RestTemplate;
+
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -29,8 +38,15 @@ class WalletControllerTest {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private RestTemplate restTemplate;
+
+    private MockRestServiceServer mockServer;
+
     @BeforeEach
     void setUp() {
+        mockServer = MockRestServiceServer.createServer(restTemplate);
+        
         // Supprimer les transactions en premier pour respecter la contrainte FK
         transactionRepository.deleteAll();
         walletRepository.deleteAll();
@@ -299,5 +315,50 @@ class WalletControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void shouldPayBillSuccessfullyWhenExternalServiceReturns200() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Configurer le mock serveur pour répondre OK à l'appel externe
+        mockServer.expect(ExpectedCount.once(), 
+                requestTo("http://localhost:8081/api/payments/bills"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withStatus(HttpStatus.OK));
+
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":2000.00,\"paymentType\":\"BILL\",\"description\":\"Facture Senelec 01\"}";
+        
+        mockMvc.perform(post("/api/wallets/pay")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paymentType").value("BILL"))
+                .andExpect(jsonPath("$.amount").value(2000.00))
+                .andExpect(jsonPath("$.reference").isNotEmpty());
+
+        mockServer.verify();
+    }
+
+    @Test
+    void shouldFailToPayBillWhenExternalServiceFails() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // Configurer le mock serveur pour répondre 500
+        mockServer.expect(ExpectedCount.once(), 
+                requestTo("http://localhost:8081/api/payments/bills"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
+
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":2000.00,\"paymentType\":\"BILL\",\"description\":\"Facture Senelec 02\"}";
+        
+        mockMvc.perform(post("/api/wallets/pay")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isInternalServerError());
+
+        mockServer.verify();
     }
 }
