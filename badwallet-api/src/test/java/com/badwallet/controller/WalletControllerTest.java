@@ -101,4 +101,36 @@ class WalletControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)));
     }
+
+    @Test
+    void shouldGetWalletByPhone() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/wallets/+221770000001")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phoneNumber").value("+221770000001"))
+                .andExpect(jsonPath("$.balance").value(5000.00));
+    }
+
+    @Test
+    void shouldGetWalletBalance() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/wallets/+221770000002/balance")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.phoneNumber").value("+221770000002"))
+                .andExpect(jsonPath("$.balance").value(10000.00));
+    }
+
+    @Test
+    void shouldReturn404WhenWalletNotFound() throws Exception {
+        mockMvc.perform(get("/api/wallets/+221799999999")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
 }
