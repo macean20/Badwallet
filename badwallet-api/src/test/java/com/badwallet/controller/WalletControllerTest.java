@@ -1,5 +1,6 @@
 package com.badwallet.controller;
 
+import com.badwallet.repository.TransactionRepository;
 import com.badwallet.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,8 +26,13 @@ class WalletControllerTest {
     @Autowired
     private WalletRepository walletRepository;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
     @BeforeEach
     void setUp() {
+        // Supprimer les transactions en premier pour respecter la contrainte FK
+        transactionRepository.deleteAll();
         walletRepository.deleteAll();
     }
 
@@ -132,5 +138,89 @@ class WalletControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
+    }
+
+    // ─── Tests Dépôt ──────────────────────────────────────────────────────────
+
+    @Test
+    void shouldDepositSuccessfully() throws Exception {
+        // Seed et extraire l'ID du premier wallet dynamiquement
+        String seedResponse = mockMvc.perform(post("/api/wallets/seed")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        // Extraire le premier ID via parsing simple du JSON
+        Integer rawId = com.jayway.jsonpath.JsonPath.read(seedResponse, "$[0].id");
+        long walletId = rawId.longValue();
+
+        mockMvc.perform(post("/api/wallets/" + walletId + "/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":1000.00}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.type").value("DEPOSIT"))
+                .andExpect(jsonPath("$.amount").value(1000.00))
+                .andExpect(jsonPath("$.reference").isNotEmpty());
+    }
+
+    @Test
+    void shouldReturn404OnDepositUnknownWallet() throws Exception {
+        mockMvc.perform(post("/api/wallets/9999/deposit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\":100.00}"))
+                .andExpect(status().isNotFound());
+    }
+
+    // ─── Tests Retrait ────────────────────────────────────────────────────────
+
+    @Test
+    void shouldWithdrawSuccessfully() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/wallets/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phoneNumber\":\"+221770000003\",\"amount\":5000.00}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.type").value("WITHDRAWAL"))
+                .andExpect(jsonPath("$.amount").value(5000.00));
+    }
+
+    @Test
+    void shouldReturn422OnInsufficientBalance() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/wallets/withdraw")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"phoneNumber\":\"+221770000001\",\"amount\":99999.00}"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.status").value(422));
+    }
+
+    // ─── Tests Transfert ──────────────────────────────────────────────────────
+
+    @Test
+    void shouldTransferSuccessfully() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/wallets/transfer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"senderPhone\":\"+221770000002\",\"recipientPhone\":\"+221770000001\",\"amount\":2000.00}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.type").value("TRANSFER"))
+                .andExpect(jsonPath("$.destinationPhone").value("+221770000001"));
+    }
+
+    @Test
+    void shouldReturn400WhenTransferToSameWallet() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/wallets/transfer")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"senderPhone\":\"+221770000001\",\"recipientPhone\":\"+221770000001\",\"amount\":100.00}"))
+                .andExpect(status().isBadRequest());
     }
 }
