@@ -1,6 +1,7 @@
 package com.badwallet.dto.request;
 
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,6 +16,9 @@ import java.math.BigDecimal;
 public class DepositRequest {
 
     @NotNull(message = "Le montant est obligatoire")
-    @DecimalMin(value = "0.01", message = "Le montant du dépôt doit être supérieur à zéro")
+    @DecimalMin(value = "0.01", message = "Le montant du dépôt doit être supérieur à 0")
     private BigDecimal amount;
+
+    @NotBlank(message = "La méthode de paiement est obligatoire")
+    private String paymentMethod;
 }

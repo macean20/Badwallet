@@ -45,7 +45,7 @@ public class BillPaymentStrategy implements PaymentStrategy {
 
     @Override
     public String getType() {
-        return "BILL";
+        return "ISM";
     }
 
     @Override
@@ -65,7 +65,7 @@ public class BillPaymentStrategy implements PaymentStrategy {
         Map<String, Object> billRequest = new HashMap<>();
         billRequest.put("phoneNumber", request.getPhoneNumber());
         billRequest.put("amount", request.getAmount());
-        billRequest.put("billReference", request.getDescription());
+        billRequest.put("serviceName", request.getServiceName());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -73,7 +73,7 @@ public class BillPaymentStrategy implements PaymentStrategy {
 
         try {
             // Appel synchrone vers le port 8081
-            log.info("Appel du payment-service pour la facture : {}", request.getDescription());
+            log.info("Appel du payment-service pour la facture : {}", request.getServiceName());
             ResponseEntity<String> response = restTemplate.postForEntity(paymentServiceUrl, entity, String.class);
             
             if (!response.getStatusCode().is2xxSuccessful()) {
@@ -97,7 +97,7 @@ public class BillPaymentStrategy implements PaymentStrategy {
                 .type(TransactionType.PAYMENT)
                 .amount(request.getAmount())
                 .wallet(wallet)
-                .destinationPhone(request.getDescription()) // La description contient la ref facture
+                .destinationPhone(request.getServiceName()) // La description contient la ref facture
                 .build();
         transactionRepository.save(transaction);
 
@@ -106,7 +106,7 @@ public class BillPaymentStrategy implements PaymentStrategy {
                 .phoneNumber(request.getPhoneNumber())
                 .amount(request.getAmount())
                 .paymentType(getType())
-                .description(request.getDescription())
+                .description(request.getServiceName())
                 .paidAt(LocalDateTime.now())
                 .build();
     }

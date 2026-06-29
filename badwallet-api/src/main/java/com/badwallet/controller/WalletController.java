@@ -1,6 +1,7 @@
 package com.badwallet.controller;
 
 import com.badwallet.dto.request.DepositRequest;
+import com.badwallet.dto.request.PayFacturesRequest;
 import com.badwallet.dto.request.PaymentRequest;
 import com.badwallet.dto.request.TransferRequest;
 import com.badwallet.dto.request.WalletCreationRequest;
@@ -14,6 +15,8 @@ import com.badwallet.service.TransactionService;
 import com.badwallet.service.WalletService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +24,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -35,8 +39,10 @@ public class WalletController {
     private final PaymentService paymentService;
 
     @PostMapping("/seed")
-    public ResponseEntity<List<WalletResponse>> seedWallets() {
-        return ResponseEntity.ok(walletService.seedWallets());
+    public ResponseEntity<List<WalletResponse>> seedWallets(
+            @RequestParam(defaultValue = "10") int numWallets,
+            @RequestParam(defaultValue = "100") int eventsPerWallet) {
+        return ResponseEntity.ok(walletService.seedWallets(numWallets, eventsPerWallet));
     }
 
     @PostMapping
@@ -45,8 +51,8 @@ public class WalletController {
     }
 
     @GetMapping
-    public ResponseEntity<List<WalletResponse>> getAllWallets() {
-        return ResponseEntity.ok(walletService.getAllWallets());
+    public ResponseEntity<Page<WalletResponse>> getAllWallets(Pageable pageable) {
+        return ResponseEntity.ok(walletService.getAllWallets(pageable));
     }
 
     @GetMapping("/{phone}")
@@ -88,5 +94,10 @@ public class WalletController {
     @PostMapping("/pay")
     public ResponseEntity<PaymentResponse> pay(@Valid @RequestBody PaymentRequest request) {
         return ResponseEntity.ok(paymentService.pay(request));
+    }
+
+    @PostMapping("/pay-factures")
+    public ResponseEntity<PaymentResponse> payFactures(@Valid @RequestBody PayFacturesRequest request) {
+        return ResponseEntity.ok(paymentService.payFactures(request));
     }
 }

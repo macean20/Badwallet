@@ -20,7 +20,16 @@ public class WalletCreationRequest {
     @Pattern(regexp = "^\\+?[0-9]{9,15}$", message = "Format de numéro de téléphone invalide (ex: +221770000001)")
     private String phoneNumber;
 
+    @NotBlank(message = "L'email est obligatoire")
+    private String email;
+
     @NotNull(message = "Le solde initial est obligatoire")
     @DecimalMin(value = "0.00", message = "Le solde initial ne peut pas être négatif")
     private BigDecimal initialBalance;
+
+    @NotBlank(message = "Le code est obligatoire")
+    private String code;
+
+    @NotBlank(message = "La devise est obligatoire")
+    private String currency;
 }

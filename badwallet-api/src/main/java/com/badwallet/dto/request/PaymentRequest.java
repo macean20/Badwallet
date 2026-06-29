@@ -21,12 +21,9 @@ public class PaymentRequest {
     private String phoneNumber;
 
     @NotNull(message = "Le montant est obligatoire")
-    @DecimalMin(value = "0.01", message = "Le montant doit être supérieur à zéro")
+    @DecimalMin(value = "0.01", message = "Le montant doit être supérieur à 0")
     private BigDecimal amount;
 
-    @NotBlank(message = "Le type de paiement est obligatoire (MERCHANT)")
-    private String paymentType;
-
-    // Description optionnelle (ex: nom du marchand)
-    private String description;
+    @NotBlank(message = "Le nom du service est obligatoire")
+    private String serviceName;
 }

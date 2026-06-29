@@ -54,21 +54,21 @@ class WalletControllerTest {
 
     @Test
     void shouldSeedWallets() throws Exception {
-        mockMvc.perform(post("/api/wallets/seed")
+        mockMvc.perform(post("/api/wallets/seed?numWallets=3")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(3)))
                 .andExpect(jsonPath("$[0].phoneNumber").value("+221770000001"))
-                .andExpect(jsonPath("$[0].balance").value(5000.00))
+                .andExpect(jsonPath("$[0].balance").value(50000.00))
                 .andExpect(jsonPath("$[1].phoneNumber").value("+221770000002"))
-                .andExpect(jsonPath("$[1].balance").value(10000.00))
+                .andExpect(jsonPath("$[1].balance").value(50000.00))
                 .andExpect(jsonPath("$[2].phoneNumber").value("+221770000003"))
-                .andExpect(jsonPath("$[2].balance").value(20000.00));
+                .andExpect(jsonPath("$[2].balance").value(50000.00));
     }
 
     @Test
     void shouldCreateWallet() throws Exception {
-        String requestBody = "{\"phoneNumber\":\"+221775555555\",\"initialBalance\":1500.00}";
+        String requestBody = "{\"phoneNumber\":\"+221775555555\",\"email\":\"test@test.com\",\"code\":\"CODE123\",\"currency\":\"XOF\",\"initialBalance\":1500.00}";
         mockMvc.perform(post("/api/wallets")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
@@ -84,7 +84,7 @@ class WalletControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"initialBalance\":100.00}";
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"email\":\"t@t.com\",\"code\":\"CODE\",\"currency\":\"XOF\",\"initialBalance\":100.00}";
         mockMvc.perform(post("/api/wallets")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
@@ -95,7 +95,7 @@ class WalletControllerTest {
     @Test
     void shouldFailToCreateWalletWhenValidationFails() throws Exception {
         // Empty phone number
-        String requestBodyEmptyPhone = "{\"phoneNumber\":\"\",\"initialBalance\":100.00}";
+        String requestBodyEmptyPhone = "{\"phoneNumber\":\"\",\"email\":\"t@t.com\",\"code\":\"C\",\"currency\":\"X\",\"initialBalance\":100.00}";
         mockMvc.perform(post("/api/wallets")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBodyEmptyPhone))
@@ -103,7 +103,7 @@ class WalletControllerTest {
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Le numéro de téléphone est obligatoire")));
 
         // Negative balance
-        String requestBodyNegativeBalance = "{\"phoneNumber\":\"+221779999999\",\"initialBalance\":-50.00}";
+        String requestBodyNegativeBalance = "{\"phoneNumber\":\"+221779999999\",\"email\":\"t@t.com\",\"code\":\"C\",\"currency\":\"X\",\"initialBalance\":-50.00}";
         mockMvc.perform(post("/api/wallets")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBodyNegativeBalance))
@@ -113,39 +113,38 @@ class WalletControllerTest {
 
     @Test
     void shouldListAllWallets() throws Exception {
-        // Seed 3 wallets first
-        mockMvc.perform(post("/api/wallets/seed")
+        mockMvc.perform(post("/api/wallets/seed?numWallets=3")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/wallets")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(3)));
+                .andExpect(jsonPath("$.content", hasSize(3)));
     }
 
     @Test
     void shouldGetWalletByPhone() throws Exception {
-        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/wallets/seed?numWallets=3").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/wallets/+221770000001")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phoneNumber").value("+221770000001"))
-                .andExpect(jsonPath("$.balance").value(5000.00));
+                .andExpect(jsonPath("$.balance").value(50000.00));
     }
 
     @Test
     void shouldGetWalletBalance() throws Exception {
-        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/wallets/seed?numWallets=3").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/wallets/+221770000002/balance")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.phoneNumber").value("+221770000002"))
-                .andExpect(jsonPath("$.balance").value(10000.00));
+                .andExpect(jsonPath("$.balance").value(50000.00));
     }
 
     @Test
@@ -172,7 +171,7 @@ class WalletControllerTest {
 
         mockMvc.perform(post("/api/wallets/" + walletId + "/deposit")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"amount\":1000.00}"))
+                        .content("{\"amount\":1000.00,\"paymentMethod\":\"CREDIT_CARD\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.type").value("DEPOSIT"))
                 .andExpect(jsonPath("$.amount").value(1000.00))
@@ -183,7 +182,7 @@ class WalletControllerTest {
     void shouldReturn404OnDepositUnknownWallet() throws Exception {
         mockMvc.perform(post("/api/wallets/9999/deposit")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"amount\":100.00}"))
+                        .content("{\"amount\":100.00,\"paymentMethod\":\"CREDIT_CARD\"}"))
                 .andExpect(status().isNotFound());
     }
 
@@ -194,12 +193,13 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
+        // Retrait de 5000 -> Frais 1% = 50 -> Montant total débité = 5050
         mockMvc.perform(post("/api/wallets/withdraw")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"phoneNumber\":\"+221770000003\",\"amount\":5000.00}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.type").value("WITHDRAWAL"))
-                .andExpect(jsonPath("$.amount").value(5000.00));
+                .andExpect(jsonPath("$.amount").value(5050.00));
     }
 
     @Test
@@ -223,7 +223,7 @@ class WalletControllerTest {
 
         mockMvc.perform(post("/api/wallets/transfer")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"senderPhone\":\"+221770000002\",\"recipientPhone\":\"+221770000001\",\"amount\":2000.00}"))
+                        .content("{\"senderPhone\":\"+221770000002\",\"receiverPhone\":\"+221770000001\",\"amount\":2000.00}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.type").value("TRANSFER"))
                 .andExpect(jsonPath("$.destinationPhone").value("+221770000001"));
@@ -236,7 +236,7 @@ class WalletControllerTest {
 
         mockMvc.perform(post("/api/wallets/transfer")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"senderPhone\":\"+221770000001\",\"recipientPhone\":\"+221770000001\",\"amount\":100.00}"))
+                        .content("{\"senderPhone\":\"+221770000001\",\"receiverPhone\":\"+221770000001\",\"amount\":100.00}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -267,7 +267,7 @@ class WalletControllerTest {
         // Effectuer un transfert depuis +221770000003 vers +221770000001
         mockMvc.perform(post("/api/wallets/transfer")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"senderPhone\":\"+221770000003\",\"recipientPhone\":\"+221770000001\",\"amount\":1000.00}"))
+                        .content("{\"senderPhone\":\"+221770000003\",\"receiverPhone\":\"+221770000001\",\"amount\":1000.00}"))
                 .andExpect(status().isCreated());
 
         // L'historique doit contenir 2 transactions (du plus récent au plus ancien)
@@ -289,27 +289,27 @@ class WalletControllerTest {
     // ─── Tests Paiement (Strategy Pattern) ───────────────────────────────────
 
     @Test
-    void shouldPayMerchantSuccessfully() throws Exception {
-        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+    void shouldPayMultipleFacturesSuccessfully() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed?numWallets=3").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":1500.00,\"paymentType\":\"MERCHANT\",\"description\":\"Achat en ligne\"}";
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"serviceName\":\"ISM\",\"factureReferences\":[\"FAC-1\",\"FAC-2\"]}";
         
-        mockMvc.perform(post("/api/wallets/pay")
+        mockMvc.perform(post("/api/wallets/pay-factures")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paymentType").value("MERCHANT"))
-                .andExpect(jsonPath("$.amount").value(1500.00))
+                .andExpect(jsonPath("$.paymentType").value("ISM"))
+                .andExpect(jsonPath("$.amount").value(0.00))
                 .andExpect(jsonPath("$.reference").isNotEmpty());
     }
 
     @Test
     void shouldFailToPayWhenStrategyUnknown() throws Exception {
-        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/wallets/seed?numWallets=3").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":1500.00,\"paymentType\":\"UNKNOWN\",\"description\":\"Test\"}";
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":1500.00,\"serviceName\":\"UNKNOWN\"}";
         
         mockMvc.perform(post("/api/wallets/pay")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -319,7 +319,7 @@ class WalletControllerTest {
 
     @Test
     void shouldPayBillSuccessfullyWhenExternalServiceReturns200() throws Exception {
-        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/wallets/seed?numWallets=3").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
         // Configurer le mock serveur pour répondre OK à l'appel externe
@@ -328,13 +328,13 @@ class WalletControllerTest {
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withStatus(HttpStatus.OK));
 
-        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":2000.00,\"paymentType\":\"BILL\",\"description\":\"Facture Senelec 01\"}";
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":2000.00,\"serviceName\":\"ISM\"}";
         
         mockMvc.perform(post("/api/wallets/pay")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestBody))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.paymentType").value("BILL"))
+                .andExpect(jsonPath("$.paymentType").value("ISM"))
                 .andExpect(jsonPath("$.amount").value(2000.00))
                 .andExpect(jsonPath("$.reference").isNotEmpty());
 
@@ -343,7 +343,7 @@ class WalletControllerTest {
 
     @Test
     void shouldFailToPayBillWhenExternalServiceFails() throws Exception {
-        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+        mockMvc.perform(post("/api/wallets/seed?numWallets=3").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
         // Configurer le mock serveur pour répondre 500
@@ -352,7 +352,7 @@ class WalletControllerTest {
                 .andExpect(method(HttpMethod.POST))
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
-        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":2000.00,\"paymentType\":\"BILL\",\"description\":\"Facture Senelec 02\"}";
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":2000.00,\"serviceName\":\"ISM\"}";
         
         mockMvc.perform(post("/api/wallets/pay")
                         .contentType(MediaType.APPLICATION_JSON)

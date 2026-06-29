@@ -18,8 +18,17 @@ public class Wallet {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "phone_number", unique = true, nullable = false, length = 20)
+    @Column(nullable = false, unique = true)
     private String phoneNumber;
+
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String code;
+
+    @Column(nullable = false)
+    private String currency;
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal balance;

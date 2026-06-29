@@ -18,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 @Service
 @RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
@@ -54,18 +57,28 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new WalletNotFoundException(
                         "Aucun wallet trouvé pour le numéro : " + request.getPhoneNumber()));
 
-        if (wallet.getBalance().compareTo(request.getAmount()) < 0) {
+        BigDecimal amount = request.getAmount();
+        BigDecimal fee = amount.multiply(new BigDecimal("0.01"));
+        BigDecimal maxFee = new BigDecimal("5000.00");
+        
+        if (fee.compareTo(maxFee) > 0) {
+            fee = maxFee;
+        }
+        
+        BigDecimal totalDeduction = amount.add(fee);
+
+        if (wallet.getBalance().compareTo(totalDeduction) < 0) {
             throw new InsufficientBalanceException(
-                    "Solde insuffisant. Solde disponible : " + wallet.getBalance());
+                    "Solde insuffisant pour le retrait et les frais (" + fee + "). Solde disponible : " + wallet.getBalance());
         }
 
-        wallet.setBalance(wallet.getBalance().subtract(request.getAmount()));
+        wallet.setBalance(wallet.getBalance().subtract(totalDeduction));
         walletRepository.save(wallet);
 
         Transaction transaction = Transaction.builder()
                 .reference(referenceGenerator.generate())
                 .type(TransactionType.WITHDRAWAL)
-                .amount(request.getAmount())
+                .amount(totalDeduction) // on stocke le montant total débité
                 .wallet(wallet)
                 .build();
 
@@ -75,7 +88,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Transactional
     public TransactionResponse transfer(TransferRequest request) {
-        if (request.getSenderPhone().equals(request.getRecipientPhone())) {
+        if (request.getSenderPhone().equals(request.getReceiverPhone())) {
             throw new IllegalArgumentException(
                     "L'expéditeur et le destinataire ne peuvent pas être identiques.");
         }
@@ -84,9 +97,9 @@ public class TransactionServiceImpl implements TransactionService {
                 .orElseThrow(() -> new WalletNotFoundException(
                         "Wallet expéditeur introuvable : " + request.getSenderPhone()));
 
-        Wallet recipient = walletRepository.findByPhoneNumber(request.getRecipientPhone())
+        Wallet recipient = walletRepository.findByPhoneNumber(request.getReceiverPhone())
                 .orElseThrow(() -> new WalletNotFoundException(
-                        "Wallet destinataire introuvable : " + request.getRecipientPhone()));
+                        "Wallet destinataire introuvable : " + request.getReceiverPhone()));
 
         if (sender.getBalance().compareTo(request.getAmount()) < 0) {
             throw new InsufficientBalanceException(

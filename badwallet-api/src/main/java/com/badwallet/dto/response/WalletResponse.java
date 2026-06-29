@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 public class WalletResponse {
     private Long id;
     private String phoneNumber;
+    private String email;
+    private String code;
+    private String currency;
     private BigDecimal balance;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

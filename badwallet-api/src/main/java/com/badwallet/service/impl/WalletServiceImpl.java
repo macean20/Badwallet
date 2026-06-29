@@ -13,11 +13,13 @@ import com.badwallet.repository.TransactionRepository;
 import com.badwallet.repository.WalletRepository;
 import com.badwallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,18 +34,22 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public List<WalletResponse> seedWallets() {
-        List<Wallet> seedData = Arrays.asList(
-                Wallet.builder().phoneNumber("+221770000001").balance(new BigDecimal("5000.00")).build(),
-                Wallet.builder().phoneNumber("+221770000002").balance(new BigDecimal("10000.00")).build(),
-                Wallet.builder().phoneNumber("+221770000003").balance(new BigDecimal("20000.00")).build()
-        );
+    public List<WalletResponse> seedWallets(int numWallets, int eventsPerWallet) {
+        List<Wallet> seedData = new ArrayList<>();
+        for (int i = 1; i <= numWallets; i++) {
+            String paddedId = String.format("%03d", i);
+            seedData.add(Wallet.builder()
+                    .phoneNumber("+221770000" + paddedId)
+                    .email("user" + i + "@example.com")
+                    .code("WLT-" + paddedId)
+                    .currency("XOF")
+                    .balance(new BigDecimal("50000.00"))
+                    .build());
+        }
 
         return seedData.stream()
-                .map(wallet -> {
-                    return walletRepository.findByPhoneNumber(wallet.getPhoneNumber())
-                            .orElseGet(() -> walletRepository.save(wallet));
-                })
+                .map(wallet -> walletRepository.findByPhoneNumber(wallet.getPhoneNumber())
+                        .orElseGet(() -> walletRepository.save(wallet)))
                 .map(walletMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -57,6 +63,9 @@ public class WalletServiceImpl implements WalletService {
 
         Wallet wallet = Wallet.builder()
                 .phoneNumber(request.getPhoneNumber())
+                .email(request.getEmail())
+                .code(request.getCode())
+                .currency(request.getCurrency())
                 .balance(request.getInitialBalance())
                 .build();
 
@@ -66,10 +75,9 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<WalletResponse> getAllWallets() {
-        return walletRepository.findAll().stream()
-                .map(walletMapper::toResponse)
-                .collect(Collectors.toList());
+    public Page<WalletResponse> getAllWallets(Pageable pageable) {
+        return walletRepository.findAll(pageable)
+                .map(walletMapper::toResponse);
     }
 
     @Override

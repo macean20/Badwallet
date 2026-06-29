@@ -16,15 +16,15 @@ import java.math.BigDecimal;
 @Builder
 public class TransferRequest {
 
-    @NotBlank(message = "Le numéro expéditeur est obligatoire")
+    @NotBlank(message = "Le numéro de l'expéditeur est obligatoire")
     @Pattern(regexp = "^\\+?[0-9]{9,15}$", message = "Format de numéro expéditeur invalide")
     private String senderPhone;
 
-    @NotBlank(message = "Le numéro destinataire est obligatoire")
+    @NotBlank(message = "Le numéro du destinataire est obligatoire")
     @Pattern(regexp = "^\\+?[0-9]{9,15}$", message = "Format de numéro destinataire invalide")
-    private String recipientPhone;
+    private String receiverPhone;
 
     @NotNull(message = "Le montant est obligatoire")
-    @DecimalMin(value = "0.01", message = "Le montant du transfert doit être supérieur à zéro")
+    @DecimalMin(value = "0.01", message = "Le montant du transfert doit être supérieur à 0")
     private BigDecimal amount;
 }
