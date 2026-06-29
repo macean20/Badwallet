@@ -269,4 +269,35 @@ class WalletControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());
     }
+
+    // ─── Tests Paiement (Strategy Pattern) ───────────────────────────────────
+
+    @Test
+    void shouldPayMerchantSuccessfully() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":1500.00,\"paymentType\":\"MERCHANT\",\"description\":\"Achat en ligne\"}";
+        
+        mockMvc.perform(post("/api/wallets/pay")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paymentType").value("MERCHANT"))
+                .andExpect(jsonPath("$.amount").value(1500.00))
+                .andExpect(jsonPath("$.reference").isNotEmpty());
+    }
+
+    @Test
+    void shouldFailToPayWhenStrategyUnknown() throws Exception {
+        mockMvc.perform(post("/api/wallets/seed").contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        String requestBody = "{\"phoneNumber\":\"+221770000001\",\"amount\":1500.00,\"paymentType\":\"UNKNOWN\",\"description\":\"Test\"}";
+        
+        mockMvc.perform(post("/api/wallets/pay")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest());
+    }
 }

@@ -1,12 +1,15 @@
 package com.badwallet.controller;
 
 import com.badwallet.dto.request.DepositRequest;
+import com.badwallet.dto.request.PaymentRequest;
 import com.badwallet.dto.request.TransferRequest;
 import com.badwallet.dto.request.WalletCreationRequest;
 import com.badwallet.dto.request.WithdrawRequest;
 import com.badwallet.dto.response.BalanceResponse;
+import com.badwallet.dto.response.PaymentResponse;
 import com.badwallet.dto.response.TransactionResponse;
 import com.badwallet.dto.response.WalletResponse;
+import com.badwallet.service.PaymentService;
 import com.badwallet.service.TransactionService;
 import com.badwallet.service.WalletService;
 import jakarta.validation.Valid;
@@ -29,6 +32,7 @@ public class WalletController {
 
     private final WalletService walletService;
     private final TransactionService transactionService;
+    private final PaymentService paymentService;
 
     @PostMapping("/seed")
     public ResponseEntity<List<WalletResponse>> seedWallets() {
@@ -77,5 +81,12 @@ public class WalletController {
     @GetMapping("/{phone}/transactions")
     public ResponseEntity<List<TransactionResponse>> getTransactionHistory(@PathVariable String phone) {
         return ResponseEntity.ok(walletService.getTransactionHistory(phone));
+    }
+
+    // ─── Paiements (Strategy Pattern) ────────────────────────────────────────
+
+    @PostMapping("/pay")
+    public ResponseEntity<PaymentResponse> pay(@Valid @RequestBody PaymentRequest request) {
+        return ResponseEntity.ok(paymentService.pay(request));
     }
 }
