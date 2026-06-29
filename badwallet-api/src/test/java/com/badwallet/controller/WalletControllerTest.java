@@ -10,6 +10,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -86,5 +87,18 @@ class WalletControllerTest {
                         .content(requestBodyNegativeBalance))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("Le solde initial ne peut pas être négatif")));
+    }
+
+    @Test
+    void shouldListAllWallets() throws Exception {
+        // Seed 3 wallets first
+        mockMvc.perform(post("/api/wallets/seed")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/wallets")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(3)));
     }
 }

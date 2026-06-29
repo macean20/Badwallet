@@ -56,4 +56,12 @@ public class WalletServiceImpl implements WalletService {
         Wallet savedWallet = walletRepository.save(wallet);
         return walletMapper.toResponse(savedWallet);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<WalletResponse> getAllWallets() {
+        return walletRepository.findAll().stream()
+                .map(walletMapper::toResponse)
+                .collect(Collectors.toList());
+    }
 }

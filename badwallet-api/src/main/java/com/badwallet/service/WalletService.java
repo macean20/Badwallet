@@ -7,4 +7,5 @@ import java.util.List;
 public interface WalletService {
     List<WalletResponse> seedWallets();
     WalletResponse createWallet(WalletCreationRequest request);
+    List<WalletResponse> getAllWallets();
 }
