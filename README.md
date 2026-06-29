@@ -1,60 +1,40 @@
-# 🚀 Projet BadWallet - Mon Dashboard Fintech
+# 🚀 Projet BadWallet - Backend (Microservices)
 
-Salut ! Bienvenue sur le dépôt de mon projet **BadWallet**. 
-C'est le projet final que j'ai réalisé pour valider mon module de Design Patterns et d'Architecture Logicielle. L'idée était de ne pas juste faire un petit TP, mais de coder une "vraie" mini-application Fintech de A à Z (avec des microservices en Java et un front en Angular).
+Bienvenue sur le dépôt Backend du projet **BadWallet**, réalisé pour valider le module de Design Patterns et d'Architecture Logicielle. L'objectif était de construire une API robuste et résiliente, capable d'être interrogée par un frontend moderne (Single Page Application).
 
-## 🎯 C'est quoi l'idée ?
-L'application permet de gérer des portefeuilles électroniques (comme Wave ou Orange Money). Il y a deux côtés :
-- **Pour l'Agent (ou Admin)** : Il peut créer de nouveaux comptes clients et faire des dépôts ou des retraits pour eux.
-- **Pour le Client** : Il se connecte pour voir son solde, envoyer de l'argent à d'autres personnes, ou même payer ses factures (comme la Senelec ou l'école ISM).
-
-## 🏗️ Comment c'est construit ?
-J'ai découpé le projet en 3 morceaux :
+## 🏗️ Architecture du Projet
+L'architecture Backend est divisée en deux microservices distincts, ce qui permet un découplage fort entre la gestion de l'argent et le système de paiement des fournisseurs.
 
 1. **`badwallet-api` (Port 8080)** : 
-   C'est le cerveau du projet. Il gère l'argent, les transferts et calcule les frais (je prends 1% sur les retraits au passage 😅). C'est aussi lui qui fait le pont avec le système des factures.
+   C'est le composant principal. Il gère la création des portefeuilles, valide les transactions (avec calcul des frais à 1%) et agit comme un proxy pour interroger le service de paiement.
    
 2. **`payment-service` (Port 8081)** : 
-   C'est un faux système externe que j'ai créé pour simuler la Senelec ou Woyofal. Il génère de fausses factures pour qu'on puisse les payer depuis l'application principale.
+   Il s'agit d'un simulateur de système externe (comme Senelec, Woyofal, ou ISM). Il génère automatiquement de fausses factures en base de données et valide les requêtes de paiement transmises par l'API principale.
 
-3. **Le Frontend Angular (Port 4200)** : 
-   L'interface visuelle. J'ai utilisé Angular 17 et TailwindCSS pour que ça soit propre et moderne.
+## 🛠️ Stack Technique
+- Java 17
+- Spring Boot 3 (Web, Data JPA, Validation)
+- PostgreSQL
+- Maven
 
-## 🛠️ La stack technique
-- **Backend** : Java 17, Spring Boot 3, PostgreSQL.
-- **Frontend** : Angular 17, RxJS, TailwindCSS.
+## ⚠️ Comment lancer le backend (IMPORTANT)
 
-## 🚀 Lancer le projet sur votre machine
+Pour que l'application fonctionne entièrement, **il est impératif d'ouvrir 2 terminaux séparés** afin de lancer les deux microservices en parallèle. Assurez-vous que PostgreSQL est démarré sur le port 5432.
 
-C'est assez simple, il faut juste ouvrir 3 terminaux.
-
-**Étape 1 : Le service des factures**
+**Terminal 1 : Démarrer le service des factures**
 ```bash
 cd payment-service
 mvn clean spring-boot:run
 ```
-*(Il va tourner sur le port 8081)*
+*(Ce service s'exécutera sur le port 8081).*
 
-**Étape 2 : L'API principale**
-Ouvrez un autre terminal :
+**Terminal 2 : Démarrer l'API principale**
 ```bash
 cd badwallet-api
 mvn clean spring-boot:run
 ```
-*(Elle tourne sur le port 8080)*
+*(L'API s'exécutera sur le port 8080).*
 
-**Étape 3 : L'interface visuelle**
-Dans un dernier terminal :
-```bash
-cd badwallet-web
-npm install
-npm start
-```
-*(Allez ensuite sur http://localhost:4200 dans votre navigateur)*
-
-## 🔑 Pour tester
-J'ai préparé des fausses données dans la base de données pour aller plus vite :
-- Si vous voulez tester le paiement de factures, connectez-vous avec ce client : **`+221770000003`**
-- Si vous voulez voir l'interface de l'agent de guichet, utilisez : **`+221770000000`**
-
-Merci d'avoir jeté un œil à mon code !
+## 🧪 Tests & Endpoints
+Les jeux d'essais (utilisateurs, portefeuilles et factures) sont injectés automatiquement au démarrage.
+Le fichier `badwallet-api.http` à la racine contient des requêtes prêtes à être exécutées pour tester les différentes fonctionnalités (Création, Dépôt, Transfert, Factures).
