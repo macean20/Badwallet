@@ -13,7 +13,9 @@ public interface FactureRepository extends JpaRepository<Facture, Long> {
 
     List<Facture> findByClientCodeAndStatus(String clientCode, FactureStatus status);
 
-    List<Facture> findByClientCodeAndStatusAndServiceNameIgnoreCase(String clientCode, FactureStatus status, String serviceName);
+    List<Facture> findByClientCodeAndStatusAndServiceNameIgnoreCase(String clientCode, FactureStatus status,
+            String serviceName);
 
-    List<Facture> findByClientCodeAndStatusAndDueDateBetween(String clientCode, FactureStatus status, LocalDate startDate, LocalDate endDate);
+    List<Facture> findByClientCodeAndStatusAndDueDateBetween(String clientCode, FactureStatus status,
+            LocalDate startDate, LocalDate endDate);
 }
